@@ -105,7 +105,7 @@ const APPS = [
       <div class="terminal-output" data-terminal-output></div>
       <form class="terminal-form" data-terminal-form>
         <label>
-          <span>elian@nebula %</span>
+          <span>amazing-user@nebula %</span>
           <input data-terminal-input type="text" autocomplete="off" />
         </label>
       </form>
