@@ -93,12 +93,4 @@ No build step is required.
 
 ## Run
 
-Open `index.html` directly in a browser.
-
-Optional local server:
-
-```bash
-python -m http.server 5500
-```
-
-Then visit `http://localhost:5500`.
+Visit https://superman2775.github.io/NebulaSpaceOS/
