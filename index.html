@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nebula Desktop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#desktop">Skip to desktop content</a>
+
+    <div id="boot-screen" class="boot-screen" aria-hidden="true">
+      <div class="boot-card">
+        <h1>Nebula OS</h1>
+        <p>Loading your Operating System...</p>
+        <div class="boot-loader" aria-hidden="true"></div>
+      </div>
+    </div>
+
+    <main id="desktop" class="desktop" aria-label="Desktop">
+      <section class="desktop-icons" aria-label="Desktop icons"></section>
+      <section id="window-layer" class="window-layer" aria-live="polite"></section>
+    </main>
+
+    <aside id="mobile-home" class="mobile-home" aria-label="Mobile app launcher">
+      <header>
+        <h2>Nebula OS</h2>
+        <p>Tap an app to open it</p>
+      </header>
+      <div id="mobile-grid" class="mobile-grid"></div>
+      <section id="mobile-app-view" class="mobile-app-view" aria-live="polite"></section>
+    </aside>
+
+    <footer class="taskbar" aria-label="Taskbar">
+      <button id="start-btn" class="start-btn" aria-label="Open app launcher">
+        <span aria-hidden="true">✦</span>
+        Launcher
+      </button>
+      <nav id="task-items" class="task-items" aria-label="Open applications"></nav>
+      <div class="tray" aria-label="System tray">
+        <span id="clock" aria-live="polite">--:--</span>
+      </div>
+    </footer>
+
+    <div id="launcher" class="launcher hidden" role="dialog" aria-modal="false" aria-label="App launcher">
+      <h3>Apps</h3>
+      <div id="launcher-items" class="launcher-items"></div>
+    </div>
+
+    <template id="window-template">
+      <article class="app-window" role="dialog" aria-modal="false">
+        <header class="window-titlebar">
+          <div class="window-controls">
+            <button class="control close" aria-label="Close window"></button>
+            <button class="control minimize" aria-label="Minimize window"></button>
+            <button class="control maximize" aria-label="Maximize window"></button>
+          </div>
+          <h3 class="window-title"></h3>
+          <button class="titlebar-close" aria-label="Close window">Close</button>
+        </header>
+        <section class="window-content"></section>
+        <button class="resize-handle" aria-label="Resize window"></button>
+      </article>
+    </template>
+
+    <script src="./script.js"></script>
+  </body>
+</html>
