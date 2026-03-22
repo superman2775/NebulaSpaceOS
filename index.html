@@ -15,6 +15,57 @@
   <body>
     <a class="skip-link" href="#desktop">Skip to desktop content</a>
 
+    <div
+      id="login-screen"
+      class="login-screen hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="login-title"
+    >
+      <div class="login-card">
+        <h1 id="login-title">Nebula OS</h1>
+        <p class="login-subtitle">Sign in</p>
+        <p class="login-error" data-login-error role="alert" aria-live="assertive"></p>
+
+        <form id="login-form" class="login-form" autocomplete="username">
+          <label>
+            Username
+            <input type="text" name="username" data-login-user required minlength="2" />
+          </label>
+          <label>
+            Password
+            <input type="password" name="password" data-login-pass required minlength="4" />
+          </label>
+          <label class="login-remember">
+            <input type="checkbox" data-login-remember />
+            Remember me on this device
+          </label>
+          <button type="submit">Sign in</button>
+        </form>
+
+        <form id="register-form" class="login-form hidden" autocomplete="off">
+          <label>
+            Choose username
+            <input type="text" name="reg-user" data-reg-user required minlength="2" />
+          </label>
+          <label>
+            Password
+            <input type="password" name="reg-pass" data-reg-pass required minlength="4" />
+          </label>
+          <label>
+            Confirm password
+            <input type="password" name="reg-pass2" data-reg-pass2 required minlength="4" />
+          </label>
+          <button type="submit">Create account</button>
+        </form>
+
+        <div class="login-switch">
+          <button type="button" class="link-btn" data-show-login>Already have an account? Sign in</button>
+          <button type="button" class="link-btn" data-show-register>Create account</button>
+        </div>
+      </div>
+    </div>
+
     <div id="boot-screen" class="boot-screen" aria-hidden="true">
       <div class="boot-card">
         <h1>Nebula OS</h1>
@@ -29,9 +80,12 @@
     </main>
 
     <aside id="mobile-home" class="mobile-home" aria-label="Mobile app launcher">
-      <header>
-        <h2>Nebula OS</h2>
-        <p>Tap an app to open it</p>
+      <header class="mobile-header">
+        <div>
+          <h2>Nebula OS</h2>
+          <p>Tap an app to open it</p>
+        </div>
+        <button type="button" id="mobile-logout-btn" class="mobile-logout">Sign out</button>
       </header>
       <div id="mobile-grid" class="mobile-grid"></div>
       <section id="mobile-app-view" class="mobile-app-view" aria-live="polite"></section>
@@ -44,6 +98,7 @@
       </button>
       <nav id="task-items" class="task-items" aria-label="Open applications"></nav>
       <div class="tray" aria-label="System tray">
+        <button type="button" id="logout-btn" class="logout-btn" aria-label="Sign out">Sign out</button>
         <span id="clock" aria-live="polite">--:--</span>
       </div>
     </footer>
