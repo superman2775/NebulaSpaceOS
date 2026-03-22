@@ -206,7 +206,59 @@ const APPS = [
       </div>
     `,
   },
+  {
+    id: "nebulasurf",
+    name: "Orbit",
+    icon: "🛰️",
+    content: `
+      <h4>Orbit</h4>
+      <div class="nebula-browser">
+        <div class="nebula-browser-toolbar">
+          <button type="button" data-surf-back aria-label="Back">←</button>
+          <button type="button" data-surf-forward aria-label="Forward">→</button>
+          <button type="button" data-surf-refresh aria-label="Refresh">↻</button>
+          <button type="button" data-surf-home>Home</button>
+          <input type="text" data-surf-url placeholder="https://example.com" spellcheck="false" />
+          <button type="button" data-surf-go>Go</button>
+          <button type="button" data-surf-bookmark>Add bookmark</button>
+        </div>
+        <p class="nebula-browser-hint">Many websites unfortunately block this browser. Wanna test with a real website? Try https://example.com/</p>
+        <div class="nebula-browser-frame-wrap">
+          <iframe data-surf-frame title="Orbit" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"></iframe>
+        </div>
+        <div class="surf-bookmarks" data-surf-bookmarks></div>
+      </div>
+    `,
+  },
+  {
+    id: "nebulaforge",
+    name: "Nexus",
+    icon: "⚡",
+    content: `
+      <h4>Nexus</h4>
+      <p class="nebula-browser-hint">The best code editor for NebulaOS.</p>
+      <div class="nebula-forge-wrap">
+        <div class="nebula-forge-toolbar">
+          <button type="button" data-forge-save>Save</button>
+          <button type="button" data-forge-clear>Clear</button>
+          <button type="button" data-forge-download>Download .txt</button>
+        </div>
+        <textarea class="nebula-forge-editor" data-forge-editor spellcheck="false" placeholder="// Nexus&#10;console.log('Nexus is amazing. This projects deserves a ten star rating!');"></textarea>
+        <p data-forge-status class="nebula-browser-hint" aria-live="polite"></p>
+      </div>
+    `,
+  },
 ];
+
+const AUTH_USERS_KEY = "nebula.auth.users";
+const AUTH_SESSION_KEY = "nebula.session";
+const AUTH_PERSIST_KEY = "nebula.auth.persistent";
+const FORGE_STORAGE_KEY = "nebula.forge.document";
+const SURF_BOOKMARKS_KEY = "nebula.surf.bookmarks";
+
+const NEBULA_SURF_WELCOME = `data:text/html;charset=utf-8,${encodeURIComponent(
+  `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>Nebula Surf</title><style>body{font-family:system-ui,sans-serif;background:linear-gradient(160deg,#0a1020,#152a48);color:#dbe8ff;margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;}main{max-width:28rem;text-align:center}h1{font-size:1.35rem;margin:0 0 12px}a{color:#9bccff}</style></head><body><main><h1>Welcome to Nebula Surf</h1><p>Type a full URL (with <code>https://url.com) and press Go.</p><p>External pages may appear blank if the site forbids iframes, that is normal browser security, and we can't help that.</p></main></body></html>`,
+)}`;
 
 const desktopIcons = document.querySelector(".desktop-icons");
 const windowLayer = document.getElementById("window-layer");
@@ -218,6 +270,14 @@ const clock = document.getElementById("clock");
 const bootScreen = document.getElementById("boot-screen");
 const mobileGrid = document.getElementById("mobile-grid");
 const mobileAppView = document.getElementById("mobile-app-view");
+const loginScreen = document.getElementById("login-screen");
+const loginForm = document.getElementById("login-form");
+const registerForm = document.getElementById("register-form");
+const loginError = document.querySelector("[data-login-error]");
+const logoutBtn = document.getElementById("logout-btn");
+const mobileLogoutBtn = document.getElementById("mobile-logout-btn");
+const showLoginBtn = document.querySelector("[data-show-login]");
+const showRegisterBtn = document.querySelector("[data-show-register]");
 
 const windowTemplate = document.getElementById("window-template");
 
@@ -280,6 +340,160 @@ musicPlayer.addEventListener("ended", () => {
   });
   notifyMusicSubscribers();
 });
+
+function getAuthUsers() {
+  try {
+    return JSON.parse(localStorage.getItem(AUTH_USERS_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveAuthUsers(users) {
+  localStorage.setItem(AUTH_USERS_KEY, JSON.stringify(users));
+}
+
+function isAuthenticated() {
+  const sessionUser = sessionStorage.getItem(AUTH_SESSION_KEY);
+  const persistUser = localStorage.getItem(AUTH_PERSIST_KEY);
+  const user = sessionUser || persistUser;
+  if (!user) return false;
+  const users = getAuthUsers();
+  return Object.prototype.hasOwnProperty.call(users, user);
+}
+
+function setLoginError(message) {
+  if (loginError) loginError.textContent = message;
+}
+
+function syncLoginFormsVisibility() {
+  const users = getAuthUsers();
+  const hasAccounts = Object.keys(users).length > 0;
+  if (!loginForm || !registerForm || !showLoginBtn || !showRegisterBtn) return;
+  if (!hasAccounts) {
+    loginForm.classList.add("hidden");
+    registerForm.classList.remove("hidden");
+    showLoginBtn.classList.add("hidden");
+    showRegisterBtn.classList.add("hidden");
+  } else {
+    loginForm.classList.remove("hidden");
+    registerForm.classList.add("hidden");
+    showLoginBtn.classList.remove("hidden");
+    showRegisterBtn.classList.remove("hidden");
+  }
+}
+
+function completeLogin(username, remember) {
+  sessionStorage.setItem(AUTH_SESSION_KEY, username);
+  if (remember) localStorage.setItem(AUTH_PERSIST_KEY, username);
+  else localStorage.removeItem(AUTH_PERSIST_KEY);
+  document.body.classList.add("nebula-authenticated");
+  if (loginScreen) loginScreen.classList.add("hidden");
+  setLoginError("");
+}
+
+function logout() {
+  sessionStorage.removeItem(AUTH_SESSION_KEY);
+  localStorage.removeItem(AUTH_PERSIST_KEY);
+  document.body.classList.remove("nebula-authenticated");
+  Array.from(state.windows.keys()).forEach((appId) => closeWindow(appId));
+  state.activeAppId = null;
+  updateTaskbar();
+  if (loginScreen) {
+    loginScreen.classList.remove("hidden");
+    syncLoginFormsVisibility();
+  }
+  if (mobileAppView) mobileAppView.innerHTML = "";
+  if (launcher) launcher.classList.add("hidden");
+}
+
+function handleShowRegisterClick() {
+  loginForm.classList.add("hidden");
+  registerForm.classList.remove("hidden");
+}
+
+function handleShowLoginClick() {
+  registerForm.classList.add("hidden");
+  loginForm.classList.remove("hidden");
+}
+
+function handleLoginSubmit(event) {
+  if (event.defaultPrevented) return;
+  event.preventDefault();
+  const user = loginForm.querySelector("[data-login-user]")?.value.trim();
+  const pass = loginForm.querySelector("[data-login-pass]")?.value;
+  const remember = Boolean(loginForm.querySelector("[data-login-remember]")?.checked);
+  const users = getAuthUsers();
+  if (!user || !pass) {
+    setLoginError("Enter username and password.");
+    return;
+  }
+  if (users[user] !== pass) {
+    setLoginError("Invalid username or password.");
+    return;
+  }
+  completeLogin(user, remember);
+}
+
+function handleRegisterSubmit(event) {
+  if (event.defaultPrevented) return;
+  event.preventDefault();
+  const user = registerForm.querySelector("[data-reg-user]")?.value.trim();
+  const pass = registerForm.querySelector("[data-reg-pass]")?.value;
+  const pass2 = registerForm.querySelector("[data-reg-pass2]")?.value;
+  const users = getAuthUsers();
+  if (!user || !pass) {
+    setLoginError("Choose a username and password.");
+    return;
+  }
+  if (pass !== pass2) {
+    setLoginError("Passwords do not match.");
+    return;
+  }
+  if (Object.prototype.hasOwnProperty.call(users, user)) {
+    setLoginError("That username is already taken.");
+    return;
+  }
+  users[user] = pass;
+  saveAuthUsers(users);
+  completeLogin(user, true);
+  syncLoginFormsVisibility();
+  registerForm.reset();
+}
+
+function handleLogoutClick() {
+  logout();
+}
+
+function setupAuthUI() {
+  if (showRegisterBtn) {
+    showRegisterBtn.removeEventListener("click", handleShowRegisterClick);
+    showRegisterBtn.addEventListener("click", handleShowRegisterClick);
+  }
+  if (showLoginBtn) {
+    showLoginBtn.removeEventListener("click", handleShowLoginClick);
+    showLoginBtn.addEventListener("click", handleShowLoginClick);
+  }
+
+  if (loginForm) {
+    loginForm.removeEventListener("submit", handleLoginSubmit);
+    loginForm.addEventListener("submit", handleLoginSubmit);
+  }
+
+  if (registerForm) {
+    registerForm.removeEventListener("submit", handleRegisterSubmit);
+    registerForm.addEventListener("submit", handleRegisterSubmit);
+  }
+
+  if (logoutBtn) {
+    logoutBtn.removeEventListener("click", handleLogoutClick);
+    logoutBtn.addEventListener("click", handleLogoutClick);
+  }
+  if (mobileLogoutBtn) {
+    mobileLogoutBtn.removeEventListener("click", handleLogoutClick);
+    mobileLogoutBtn.addEventListener("click", handleLogoutClick);
+  }
+}
 
 function isMobileLayout() {
   return window.matchMedia("(max-width: 820px)").matches;
@@ -602,6 +816,8 @@ function initAppBehavior(appId, container) {
     calculator: initCalculatorApp,
     tasks: initTasksApp,
     clockapp: initClockApp,
+    nebulasurf: initNebulaSurfApp,
+    nebulaforge: initNebulaForgeApp,
     explorer: initExplorerApp,
     settings: initSettingsApp,
   };
@@ -1080,6 +1296,144 @@ function initClockApp(container) {
   render();
 }
 
+function getSurfBookmarks() {
+  try {
+    return JSON.parse(localStorage.getItem(SURF_BOOKMARKS_KEY) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveSurfBookmarks(list) {
+  localStorage.setItem(SURF_BOOKMARKS_KEY, JSON.stringify(list));
+}
+
+function normalizeSurfUrl(raw) {
+  const s = raw.trim();
+  if (!s || s === "nebula://home") return NEBULA_SURF_WELCOME;
+  if (s.startsWith("data:")) return s;
+  if (/^https?:\/\//i.test(s)) return s;
+  if (s.includes(".") && !/\s/.test(s)) return `https://${s}`;
+  return s;
+}
+
+function initNebulaSurfApp(container) {
+  const iframe = container.querySelector("[data-surf-frame]");
+  const urlInput = container.querySelector("[data-surf-url]");
+  const back = container.querySelector("[data-surf-back]");
+  const forward = container.querySelector("[data-surf-forward]");
+  const refresh = container.querySelector("[data-surf-refresh]");
+  const home = container.querySelector("[data-surf-home]");
+  const go = container.querySelector("[data-surf-go]");
+  const bookmarkBtn = container.querySelector("[data-surf-bookmark]");
+  const bookmarksEl = container.querySelector("[data-surf-bookmarks]");
+  if (!iframe || !urlInput || !back || !forward || !refresh || !home || !go || !bookmarkBtn || !bookmarksEl) return;
+
+  let history = [NEBULA_SURF_WELCOME];
+  let histIdx = 0;
+
+  const displayUrlForBar = (url) => {
+    urlInput.value = url === NEBULA_SURF_WELCOME ? "nebula://home" : url;
+  };
+
+  const loadAtIndex = () => {
+    const url = history[histIdx];
+    displayUrlForBar(url);
+    iframe.src = url;
+  };
+
+  const navigateTo = (url) => {
+    history = history.slice(0, histIdx + 1);
+    history.push(url);
+    histIdx = history.length - 1;
+    loadAtIndex();
+  };
+
+  const renderBookmarks = () => {
+    const list = getSurfBookmarks();
+    bookmarksEl.innerHTML = "";
+    if (!list.length) return;
+    const label = document.createElement("p");
+    label.className = "nebula-browser-hint";
+    label.textContent = "Bookmarks";
+    bookmarksEl.appendChild(label);
+    const row = document.createElement("div");
+    row.className = "surf-bookmark-row";
+    list.forEach((entry) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = entry.title || entry.url;
+      b.addEventListener("click", () => navigateTo(entry.url));
+      row.appendChild(b);
+    });
+    bookmarksEl.appendChild(row);
+  };
+
+  back.addEventListener("click", () => {
+    if (histIdx > 0) {
+      histIdx -= 1;
+      loadAtIndex();
+    }
+  });
+  forward.addEventListener("click", () => {
+    if (histIdx < history.length - 1) {
+      histIdx += 1;
+      loadAtIndex();
+    }
+  });
+  refresh.addEventListener("click", () => {
+    iframe.src = iframe.src;
+  });
+  home.addEventListener("click", () => navigateTo(NEBULA_SURF_WELCOME));
+  go.addEventListener("click", () => navigateTo(normalizeSurfUrl(urlInput.value)));
+  urlInput.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") navigateTo(normalizeSurfUrl(urlInput.value));
+  });
+  bookmarkBtn.addEventListener("click", () => {
+    const url = normalizeSurfUrl(urlInput.value);
+    const title = url === NEBULA_SURF_WELCOME ? "Nebula home" : urlInput.value.trim() || url;
+    const list = getSurfBookmarks();
+    if (!list.some((b) => b.url === url)) {
+      list.push({ title, url });
+      saveSurfBookmarks(list);
+    }
+    renderBookmarks();
+  });
+
+  loadAtIndex();
+  renderBookmarks();
+}
+
+function initNebulaForgeApp(container) {
+  const editor = container.querySelector("[data-forge-editor]");
+  const status = container.querySelector("[data-forge-status]");
+  const saveBtn = container.querySelector("[data-forge-save]");
+  const clearBtn = container.querySelector("[data-forge-clear]");
+  const downloadBtn = container.querySelector("[data-forge-download]");
+  if (!editor || !status || !saveBtn || !clearBtn || !downloadBtn) return;
+
+  editor.value = localStorage.getItem(FORGE_STORAGE_KEY) || "";
+
+  saveBtn.addEventListener("click", () => {
+    localStorage.setItem(FORGE_STORAGE_KEY, editor.value);
+    status.textContent = "Saved to this browser.";
+  });
+  clearBtn.addEventListener("click", () => {
+    editor.value = "";
+    localStorage.removeItem(FORGE_STORAGE_KEY);
+    status.textContent = "Cleared.";
+  });
+  downloadBtn.addEventListener("click", () => {
+    const blob = new Blob([editor.value], { type: "text/plain;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "nebula-forge.txt";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    status.textContent = "Download started.";
+  });
+}
+
 function tickClock() {
   const now = new Date();
   clock.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -1110,19 +1464,29 @@ function setupLauncher() {
   });
 }
 
-function setupBootScreen() {
+function setupBootScreen(onDone) {
   setTimeout(() => {
     bootScreen.classList.add("hidden");
+    if (typeof onDone === "function") onDone();
   }, 1000);
 }
 
 function init() {
+  if (isAuthenticated()) {
+    document.body.classList.add("nebula-authenticated");
+  }
+  syncLoginFormsVisibility();
+  setupAuthUI();
   renderDesktopAndLauncher();
   tickClock();
   setInterval(tickClock, 1000 * 20);
   setupLauncher();
   setupKeyboardShortcuts();
-  setupBootScreen();
+  setupBootScreen(() => {
+    if (!isAuthenticated() && loginScreen) {
+      loginScreen.classList.remove("hidden");
+    }
+  });
 }
 
 init();
