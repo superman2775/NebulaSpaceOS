@@ -20,9 +20,10 @@ No build step is required.
 ## Main Components
 
 - `index.html`
+  - Local login screen (before desktop)
   - Desktop canvas and icon area
   - Window layer
-  - Taskbar and launcher
+  - Taskbar and launcher (includes Sign out)
   - Mobile app-grid layout
 - `styles.css`
   - Visual theme, typography, animation
@@ -40,6 +41,11 @@ No build step is required.
 
 ## Features Implemented
 
+- **Local login (no server)**
+  - First launch: create an account (username + password stored in `localStorage` — demo only, not secure)
+  - Later: sign in; optional “Remember me” keeps you signed in on this device (`localStorage`)
+  - Tab session uses `sessionStorage` when “Remember me” is off
+  - **Sign out** from the taskbar (desktop) or mobile header
 - Desktop icons that open apps
 - Windowed apps:
   - About
@@ -57,6 +63,8 @@ No build step is required.
   - Calculator
   - Tasks
   - Clock
+  - Browser
+  - Code editor
   - Interactive app actions:
     - Notes: editable + saved to local storage
     - Calendar: month navigation and generated day grid
@@ -70,6 +78,8 @@ No build step is required.
     - Clock: start/stop/reset stopwatch
     - Explorer: folder switching with file lists
     - Settings: high-contrast theme + animation toggle
+    - Browser (Orbit): Look up websites
+    - Code editor (Nexus): Edit code
 - Basic window management:
   - Open, close, minimize
   - Maximize/restore (including double-click title bar)
